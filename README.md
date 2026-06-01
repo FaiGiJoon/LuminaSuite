@@ -1,4 +1,4 @@
-# OmniNexus
+# LuminaSuite
 
 A comprehensive collection of tools for Nintendo emulation enthusiasts, focusing on automated save synchronization, intelligent backups, real-time translation, and ROM management.
 
