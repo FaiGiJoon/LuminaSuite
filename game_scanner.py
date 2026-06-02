@@ -193,10 +193,8 @@ class GameScanner:
                 platform = "DeSmuME"
                 with open(file_path, 'rb') as f:
                     title_bytes = f.read(12)
-                    f.seek(0x0C)
-                    code_bytes = f.read(4)
-                name = title_bytes.split(b'\x00')[0].decode('ascii', errors='ignore').strip()
-                game_id = code_bytes.decode('ascii', errors='ignore').strip()
+                name = title_bytes.split(b'\\x00')[0].decode('ascii', errors='ignore').strip()
+                game_id = os.path.splitext(os.path.basename(file_path))[0]
             elif ext in [".3ds", ".cia"]:
                 platform = "Citra"
                 # Basic Title ID extraction from filename if present [TitleID]
