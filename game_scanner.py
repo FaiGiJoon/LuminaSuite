@@ -187,9 +187,8 @@ class GameScanner:
                 with open(file_path, 'rb') as f:
                     f.seek(0xA0)
                     title_bytes = f.read(12)
-                    code_bytes = f.read(4)
-                name = title_bytes.split(b'\x00')[0].decode('ascii', errors='ignore').strip()
-                game_id = code_bytes.decode('ascii', errors='ignore').strip()
+                name = title_bytes.split(b'\\x00')[0].decode('ascii', errors='ignore').strip()
+                game_id = os.path.splitext(os.path.basename(file_path))[0]
             elif ext == ".nds":
                 platform = "DeSmuME"
                 with open(file_path, 'rb') as f:
