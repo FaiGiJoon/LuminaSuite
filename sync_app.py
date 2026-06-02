@@ -226,6 +226,36 @@ class PokeSyncApp(ctk.CTk if GUI_AVAILABLE else object):
         self.citra_path_entry = self._create_setting(config_card, "Citra Path", self.manager.config.get("citra_path", ""))
         self.desmume_path_entry = self._create_setting(config_card, "DeSmuME Path", self.manager.config.get("desmume_path", ""))
 
+        # ROM Directories Card
+        rom_card = ctk.CTkFrame(scroll_frame, fg_color=gui_theme.COLORS["card_bg"],
+                                  border_color=gui_theme.COLORS["purple"], border_width=2,
+                                  corner_radius=20)
+        rom_card.pack(fill="x", padx=50, pady=10)
+
+        ctk.CTkLabel(rom_card, text="ROM Directories",
+                    font=ctk.CTkFont(size=22, weight="bold"),
+                    text_color=gui_theme.COLORS["purple"]).pack(pady=(20, 15), padx=30, anchor="w")
+
+        self.rom_listbox = ctk.CTkTextbox(rom_card, height=120, fg_color=gui_theme.COLORS["bg"],
+                                         border_color=gui_theme.COLORS["blue"], border_width=1)
+        self.rom_listbox.pack(fill="x", padx=30, pady=5)
+
+        # Initial populate
+        for path in self.manager.config.get("rom_directories", []):
+            self.rom_listbox.insert("end", path + "\n")
+
+        btn_frame = ctk.CTkFrame(rom_card, fg_color="transparent")
+        btn_frame.pack(fill="x", padx=30, pady=(5, 20))
+
+        ctk.CTkButton(btn_frame, text="+ Add Directory", width=140, height=35,
+                     fg_color=gui_theme.COLORS["blue"],
+                     font=ctk.CTkFont(size=13, weight="bold"),
+                     command=self.add_rom_dir).pack(side="left", padx=(0, 10))
+        ctk.CTkButton(btn_frame, text="Clear All", width=140, height=35,
+                     fg_color=gui_theme.COLORS["error"],
+                     font=ctk.CTkFont(size=13, weight="bold"),
+                     command=lambda: self.rom_listbox.delete("1.0", "end")).pack(side="left")
+
         # Save Button
         save_btn = ctk.CTkButton(scroll_frame, text="Save & Refresh",
                                corner_radius=12,
@@ -385,25 +415,43 @@ class PokeSyncApp(ctk.CTk if GUI_AVAILABLE else object):
             card.pack(side="left", padx=12, pady=10)
             card.pack_propagate(False)
 
-            # Platform Tag
-            tag_color = self._get_platform_color(game['platform'])
-            ctk.CTkLabel(card, text=game['platform'], font=ctk.CTkFont(size=11, weight="bold"),
-                        fg_color=tag_color, text_color="white", corner_radius=8).pack(pady=(20, 10))
+            # Status Tag
+            status_colors = {"Ready": gui_theme.COLORS["success"], "Not Started": gui_theme.COLORS["info"], "Save Only": gui_theme.COLORS["warning"]}
+            status_color = status_colors.get(game.get('status', 'Ready'), gui_theme.COLORS["text_dim"])
 
-            ctk.CTkLabel(card, text=game['name'], font=ctk.CTkFont(size=16, weight="bold"),
+            tag_frame = ctk.CTkFrame(card, fg_color="transparent")
+            tag_frame.pack(pady=(15, 5))
+
+            # Platform Tag
+            p_color = self._get_platform_color(game['platform'])
+            ctk.CTkLabel(tag_frame, text=game['platform'], font=ctk.CTkFont(size=10, weight="bold"),
+                        fg_color=p_color, text_color="white", corner_radius=6, width=60).pack(side="left", padx=2)
+
+            # Status Tag
+            ctk.CTkLabel(tag_frame, text=game.get('status', 'Ready').upper(), font=ctk.CTkFont(size=10, weight="bold"),
+                        fg_color=status_color, text_color="white", corner_radius=6, width=80).pack(side="left", padx=2)
+
+            ctk.CTkLabel(card, text=game['name'], font=ctk.CTkFont(size=15, weight="bold"),
                         text_color=gui_theme.COLORS["text"],
                         wraplength=170).pack(pady=10, padx=15)
 
             btn_frame = ctk.CTkFrame(card, fg_color="transparent")
-            btn_frame.pack(side="bottom", pady=20)
-            ctk.CTkButton(btn_frame, text="Push", width=75, height=35,
-                         fg_color=gui_theme.COLORS["success"],
-                         font=ctk.CTkFont(size=12, weight="bold"),
-                         command=lambda: self.sync_action("push", game)).pack(side="left", padx=5)
-            ctk.CTkButton(btn_frame, text="Pull", width=75, height=35,
-                         fg_color=gui_theme.COLORS["info"],
-                         font=ctk.CTkFont(size=12, weight="bold"),
-                         command=lambda: self.sync_action("pull", game)).pack(side="left", padx=5)
+            btn_frame.pack(side="bottom", pady=15)
+
+            if game.get('status') == "Not Started":
+                 ctk.CTkButton(btn_frame, text="Start Game", width=160, height=35,
+                             fg_color=gui_theme.COLORS["purple"],
+                             font=ctk.CTkFont(size=12, weight="bold"),
+                             command=lambda: messagebox.showinfo("Launch", f"Launch {game['name']} to create a save!")).pack(padx=5)
+            else:
+                ctk.CTkButton(btn_frame, text="Push", width=75, height=35,
+                             fg_color=gui_theme.COLORS["success"],
+                             font=ctk.CTkFont(size=12, weight="bold"),
+                             command=lambda: self.sync_action("push", game)).pack(side="left", padx=5)
+                ctk.CTkButton(btn_frame, text="Pull", width=75, height=35,
+                             fg_color=gui_theme.COLORS["info"],
+                             font=ctk.CTkFont(size=12, weight="bold"),
+                             command=lambda: self.sync_action("pull", game)).pack(side="left", padx=5)
         else:
             card = ctk.CTkFrame(parent, fg_color=gui_theme.COLORS["card_bg"],
                                corner_radius=15, border_width=1, border_color=gui_theme.COLORS["cyan"])
@@ -414,19 +462,32 @@ class PokeSyncApp(ctk.CTk if GUI_AVAILABLE else object):
                         text_color=gui_theme.COLORS["text"]).pack(side="left", padx=25, pady=20)
 
             # Actions on the right
-            ctk.CTkButton(card, text="Pull", width=90, height=38,
-                         fg_color=gui_theme.COLORS["info"],
-                         font=ctk.CTkFont(size=13, weight="bold"),
-                         command=lambda g=game: self.sync_action("pull", g)).pack(side="right", padx=15)
-            ctk.CTkButton(card, text="Push", width=90, height=38,
-                         fg_color=gui_theme.COLORS["success"],
-                         font=ctk.CTkFont(size=13, weight="bold"),
-                         command=lambda g=game: self.sync_action("push", g)).pack(side="right", padx=5)
+            if game.get('status') == "Not Started":
+                 ctk.CTkButton(card, text="Launch", width=90, height=38,
+                             fg_color=gui_theme.COLORS["purple"],
+                             font=ctk.CTkFont(size=13, weight="bold"),
+                             command=lambda: messagebox.showinfo("Launch", f"Launch {game['name']} to create a save!")).pack(side="right", padx=15)
+            else:
+                ctk.CTkButton(card, text="Pull", width=90, height=38,
+                             fg_color=gui_theme.COLORS["info"],
+                             font=ctk.CTkFont(size=13, weight="bold"),
+                             command=lambda g=game: self.sync_action("pull", g)).pack(side="right", padx=15)
+                ctk.CTkButton(card, text="Push", width=90, height=38,
+                             fg_color=gui_theme.COLORS["success"],
+                             font=ctk.CTkFont(size=13, weight="bold"),
+                             command=lambda g=game: self.sync_action("push", g)).pack(side="right", padx=5)
+
+            status_colors = {"Ready": gui_theme.COLORS["success"], "Not Started": gui_theme.COLORS["info"], "Save Only": gui_theme.COLORS["warning"]}
+            status_color = status_colors.get(game.get('status', 'Ready'), gui_theme.COLORS["text_dim"])
+
+            ctk.CTkLabel(card, text=game.get('status', 'Ready').upper(), font=ctk.CTkFont(size=11, weight="bold"),
+                        fg_color=status_color, text_color="white", corner_radius=8,
+                        width=90, height=28).pack(side="right", padx=10)
 
             tag_color = self._get_platform_color(game['platform'])
             ctk.CTkLabel(card, text=game['platform'], font=ctk.CTkFont(size=12, weight="bold"),
                         fg_color=tag_color, text_color="white", corner_radius=8,
-                        width=85, height=28).pack(side="right", padx=20)
+                        width=85, height=28).pack(side="right", padx=10)
 
     def _get_platform_color(self, platform):
         colors = {
@@ -438,14 +499,25 @@ class PokeSyncApp(ctk.CTk if GUI_AVAILABLE else object):
         }
         return colors.get(platform, "#8E8E93")
 
+    def add_rom_dir(self):
+        path = filedialog.askdirectory()
+        if path:
+            current_dirs = self.rom_listbox.get("1.0", "end-1c").strip().split("\n")
+            if path not in [d.strip() for d in current_dirs]:
+                self.rom_listbox.insert("end", path + "\n")
+
     def save_settings(self):
+        rom_dirs = self.rom_listbox.get("1.0", "end-1c").strip().split("\n")
+        rom_dirs = list(dict.fromkeys(d.strip() for d in rom_dirs if d.strip()))
+
         new_config = {
             "github_username": self.user_entry.get(),
             "github_token": self.token_entry.get(),
             "github_repo_name": self.repo_entry.get(),
             "gba_saves_path": self.gba_path_entry.get(),
             "citra_path": self.citra_path_entry.get(),
-            "desmume_path": self.desmume_path_entry.get()
+            "desmume_path": self.desmume_path_entry.get(),
+            "rom_directories": rom_dirs
         }
         self.manager.update_config(new_config)
         messagebox.showinfo("Success", "Settings saved and synchronized.")

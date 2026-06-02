@@ -16,7 +16,8 @@ class SyncManager:
             gba_saves_path=self.config.get("gba_saves_path"),
             ryujinx_path=self.config.get("ryujinx_path"),
             yuzu_path=self.config.get("yuzu_path"),
-            desmume_path=self.config.get("desmume_path")
+            desmume_path=self.config.get("desmume_path"),
+            rom_directories=self.config.get("rom_directories", [])
         )
 
     def load_config(self):
@@ -31,7 +32,8 @@ class SyncManager:
             "gba_saves_path": "",
             "ryujinx_path": "",
             "yuzu_path": "",
-            "desmume_path": ""
+            "desmume_path": "",
+            "rom_directories": []
         }
 
     def save_config(self):
@@ -56,7 +58,8 @@ class SyncManager:
             gba_saves_path=self.config.get("gba_saves_path"),
             ryujinx_path=self.config.get("ryujinx_path"),
             yuzu_path=self.config.get("yuzu_path"),
-            desmume_path=self.config.get("desmume_path")
+            desmume_path=self.config.get("desmume_path"),
+            rom_directories=self.config.get("rom_directories", [])
         )
 
     def get_games(self):
