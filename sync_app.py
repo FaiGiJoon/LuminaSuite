@@ -506,7 +506,7 @@ class PokeSyncApp(ctk.CTk if GUI_AVAILABLE else object):
 
     def save_settings(self):
         rom_dirs = self.rom_listbox.get("1.0", "end-1c").strip().split("\n")
-        rom_dirs = [d.strip() for d in rom_dirs if d.strip()]
+        rom_dirs = list(dict.fromkeys(d.strip() for d in rom_dirs if d.strip()))
 
         new_config = {
             "github_username": self.user_entry.get(),
