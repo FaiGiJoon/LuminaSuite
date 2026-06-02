@@ -502,7 +502,9 @@ class PokeSyncApp(ctk.CTk if GUI_AVAILABLE else object):
     def add_rom_dir(self):
         path = filedialog.askdirectory()
         if path:
-            self.rom_listbox.insert("end", path + "\n")
+            current_dirs = self.rom_listbox.get("1.0", "end-1c").strip().split("\n")
+            if path not in [d.strip() for d in current_dirs]:
+                self.rom_listbox.insert("end", path + "\n")
 
     def save_settings(self):
         rom_dirs = self.rom_listbox.get("1.0", "end-1c").strip().split("\n")
