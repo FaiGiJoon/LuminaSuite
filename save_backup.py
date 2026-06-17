@@ -6,6 +6,7 @@ import re
 import json
 import subprocess
 from datetime import datetime
+from color_constants import SUCCESS, INFO, WARNING, ERROR, HEADER, RESET
 try:
     import psutil
 except ImportError:
@@ -20,9 +21,9 @@ def load_ai():
             from transformers import pipeline
             # Use a small, efficient model
             AI_CAPTIONER = pipeline("image-to-text", model="Salesforce/blip-image-captioning-base")
-            print("AI Scene Recognition model loaded.")
+            print(f"{SUCCESS} AI Scene Recognition model loaded.")
         except Exception as e:
-            print(f"AI model loading failed (will use placeholder): {e}")
+            print(f"{WARNING} AI model loading failed (will use placeholder): {e}")
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -59,7 +60,7 @@ class SaveBackupHandler(FileSystemEventHandler):
                 with open(self.metadata_path, 'r') as f:
                     return json.load(f)
             except Exception as e:
-                print(f"Error loading metadata: {e}")
+                print(f"{ERROR} Error loading metadata: {e}")
         return {}
 
     def save_metadata(self):
@@ -67,7 +68,7 @@ class SaveBackupHandler(FileSystemEventHandler):
             with open(self.metadata_path, 'w') as f:
                 json.dump(self.metadata, f, indent=4)
         except Exception as e:
-            print(f"Error saving metadata: {e}")
+            print(f"{ERROR} Error saving metadata: {e}")
 
     def on_modified(self, event):
         if not event.is_directory:
@@ -98,7 +99,7 @@ class SaveBackupHandler(FileSystemEventHandler):
             # Performance Throttling
             if psutil:
                 while psutil.cpu_percent(interval=1) > self.cpu_threshold:
-                    print(f"System load high, delaying backup for {os.path.basename(file_path)}...")
+                    print(f"{WARNING} System load high, delaying backup for {os.path.basename(file_path)}...")
                     time.sleep(5)
             
             backup_path = copy_with_timestamp(file_path, self.backup_dir, use_delta=self.use_delta, metadata=self.metadata)
@@ -148,7 +149,7 @@ def recognize_scene(source_file):
                 if result and 'generated_text' in result[0]:
                     return result[0]['generated_text']
             except Exception as e:
-                print(f"Error during AI scene recognition: {e}")
+                print(f"{ERROR} Error during AI scene recognition: {e}")
         return f"Scene with screenshot {os.path.basename(screenshot_path)}"
     return "No screenshot available"
 
@@ -199,7 +200,7 @@ def copy_with_timestamp(source_file, backup_dir, use_delta=False, metadata=None)
         importance = calculate_importance(source_file, last_path)
         if importance > 0.1: # Threshold for milestone
             is_milestone = True
-            print(f"Significant change detected (score: {importance:.2f}). Flagging as Milestone.")
+            print(f"{INFO} Significant change detected (score: {importance:.2f}). Flagging as Milestone.")
     else:
         is_milestone = True # First backup is always a milestone
 
@@ -219,7 +220,7 @@ def copy_with_timestamp(source_file, backup_dir, use_delta=False, metadata=None)
         try:
             cmd = ["xdelta3", "-e", "-s", source_full_path, source_file, backup_path]
             subprocess.run(cmd, check=True, capture_output=True)
-            print(f"Delta backup created: {filename} -> {backup_filename}")
+            print(f"{SUCCESS} Delta backup created: {filename} -> {backup_filename}")
             if metadata is not None:
                 metadata[backup_filename] = {
                     "backup_filename": backup_filename,
@@ -232,7 +233,7 @@ def copy_with_timestamp(source_file, backup_dir, use_delta=False, metadata=None)
                 }
             return backup_path
         except subprocess.CalledProcessError as e:
-            print(f"Error creating delta backup (falling back to full): {e}")
+            print(f"{WARNING} Error creating delta backup (falling back to full): {e}")
             # Fallback to full backup below
 
     # Full backup logic
@@ -242,7 +243,7 @@ def copy_with_timestamp(source_file, backup_dir, use_delta=False, metadata=None)
     try:
         # Using shutil.copy instead of copy2 to update mtime to backup time
         shutil.copy(source_file, backup_path)
-        print(f"Backed up: {filename} -> {backup_filename}")
+        print(f"{SUCCESS} Backed up: {filename} -> {backup_filename}")
         if metadata is not None:
             metadata[backup_filename] = {
                 "backup_filename": backup_filename,
@@ -283,20 +284,20 @@ def prune_backups(backup_dir, days=7, metadata=None):
                     os.remove(file_path)
                     if metadata and filename in metadata:
                         del metadata[filename]
-                    print(f"Pruned old backup: {filename}")
+                    print(f"{INFO} Pruned old backup: {filename}")
                 except Exception as e:
-                    print(f"Error pruning {filename}: {e}")
+                    print(f"{ERROR} Error pruning {filename}: {e}")
 
 def list_backups(backup_dir):
     metadata_path = os.path.join(backup_dir, METADATA_FILE)
     if not os.path.exists(metadata_path):
-        print("No metadata found.")
+        print(f"{WARNING} No metadata found.")
         return
 
     with open(metadata_path, 'r') as f:
         metadata = json.load(f)
 
-    print(f"{'Timestamp':<25} {'Type':<10} {'Milestone':<10} {'Label'}")
+    print(f"{HEADER}{'Timestamp':<25} {'Type':<10} {'Milestone':<10} {'Label'}{RESET}")
     print("-" * 70)
     for filename, info in sorted(metadata.items(), key=lambda x: x[1]['timestamp'], reverse=True):
         milestone = "*" if info.get("milestone") else " "
@@ -305,7 +306,7 @@ def list_backups(backup_dir):
 def restore_backup(backup_dir, target_dir, timestamp=None):
     metadata_path = os.path.join(backup_dir, METADATA_FILE)
     if not os.path.exists(metadata_path):
-        print("No metadata found.")
+        print(f"{ERROR} No metadata found.")
         return
 
     with open(metadata_path, 'r') as f:
@@ -318,7 +319,7 @@ def restore_backup(backup_dir, target_dir, timestamp=None):
         backups = [sorted(metadata.values(), key=lambda x: x['timestamp'], reverse=True)[0]]
 
     if not backups:
-        print("Backup not found.")
+        print(f"{ERROR} Backup not found.")
         return
 
     info = backups[0]
@@ -337,10 +338,10 @@ def restore_backup(backup_dir, target_dir, timestamp=None):
             cmd = ["xdelta3", "-d", "-s", parent_path, delta_path, dest_path]
             subprocess.run(cmd, check=True)
         except Exception as e:
-            print(f"Error restoring delta: {e}")
+            print(f"{ERROR} Error restoring delta: {e}")
             return
 
-    print(f"Restored {original_filename} from {info['timestamp']} ({info['type']})")
+    print(f"{SUCCESS} Restored {original_filename} from {info['timestamp']} ({info['type']})")
 
 def main():
     import argparse
@@ -364,7 +365,7 @@ def main():
     backup_dir = args.backup
 
     if not backup_dir:
-        print("Error: Backup directory is required.")
+        print(f"{ERROR} Backup directory is required.")
         sys.exit(1)
 
     backup_dir = os.path.abspath(backup_dir)
@@ -376,13 +377,13 @@ def main():
     if args.restore or (hasattr(args, 'restore') and args.restore is None and '--restore' in sys.argv):
         target = args.restore_to or source_dir
         if not target:
-            print("Error: Must specify restoration target (--restore-to or source positional arg).")
+            print(f"{ERROR} Must specify restoration target (--restore-to or source positional arg).")
             sys.exit(1)
         restore_backup(backup_dir, os.path.abspath(target), timestamp=args.restore)
         return
 
     if not source_dir:
-        print("Error: Source directory is required for monitoring.")
+        print(f"{ERROR} Source directory is required for monitoring.")
         sys.exit(1)
 
     source_dir = os.path.abspath(source_dir)
@@ -391,7 +392,7 @@ def main():
     load_ai()
 
     if not os.path.exists(source_dir):
-        print(f"Error: Source directory '{source_dir}' does not exist.")
+        print(f"{ERROR} '{source_dir}' does not exist.")
         sys.exit(1)
 
     if not os.path.exists(backup_dir):
@@ -408,11 +409,11 @@ def main():
     observer = Observer()
     observer.schedule(event_handler, source_dir, recursive=args.recursive)
     
-    print(f"Monitoring: {source_dir}")
-    print(f"Backups to: {backup_dir}")
-    print(f"Retention: {args.retention} days")
+    print(f"{HEADER} Monitoring: {source_dir}{RESET}")
+    print(f"{INFO} Backups to: {backup_dir}")
+    print(f"{INFO} Retention: {args.retention} days")
     if args.extensions:
-        print(f"Extensions: {', '.join(args.extensions)}")
+        print(f"{INFO} Extensions: {', '.join(args.extensions)}")
 
     observer.start()
     try:

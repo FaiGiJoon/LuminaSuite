@@ -1,0 +1,17 @@
+# ANSI Color Constants
+RED = "\033[91m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+BLUE = "\033[94m"
+MAGENTA = "\033[95m"
+CYAN = "\033[96m"
+RESET = "\033[0m"
+BOLD = "\033[1m"
+UNDERLINE = "\033[4m"
+
+# Style Presets
+SUCCESS = f"{GREEN}{BOLD}[+]{RESET}"
+INFO = f"{CYAN}{BOLD}[*]{RESET}"
+WARNING = f"{YELLOW}{BOLD}[!]{RESET}"
+ERROR = f"{RED}{BOLD}[-]{RESET}"
+HEADER = f"{MAGENTA}{BOLD}"

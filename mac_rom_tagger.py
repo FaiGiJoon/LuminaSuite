@@ -15,6 +15,7 @@ import subprocess
 import xattr
 import plistlib
 import argparse
+from color_constants import SUCCESS, INFO, WARNING, ERROR, HEADER, RESET
 
 def parse_gba_header(file_path):
     """
@@ -100,15 +101,15 @@ def process_directory(directory):
     Processes all .gba, .iso, and .gcm files in the directory.
     """
     if not os.path.isdir(directory):
-        print(f"Error: {directory} is not a valid directory.")
+        print(f"{ERROR} {directory} is not a valid directory.")
         return
 
     files = [f for f in os.listdir(directory) if f.lower().endswith(('.gba', '.iso', '.gcm'))]
     if not files:
-        print(f"No compatible ROM files found in {directory}")
+        print(f"{WARNING} No compatible ROM files found in {directory}")
         return
 
-    print(f"Processing {len(files)} files in {directory}...")
+    print(f"{HEADER} Processing {len(files)} files in {directory}...{RESET}")
 
     for i, filename in enumerate(files):
         file_path = os.path.join(directory, filename)
@@ -123,10 +124,10 @@ def process_directory(directory):
                 color = "Purple"
 
             if not title or not code:
-                print(f"[{i+1}/{len(files)}] Skipping {filename}: Could not parse header data.")
+                print(f"{WARNING} [{i+1}/{len(files)}] Skipping {filename}: Could not parse header data.")
                 continue
 
-            print(f"[{i+1}/{len(files)}] Tagging: {filename}")
+            print(f"{INFO} [{i+1}/{len(files)}] Tagging: {filename}")
             print(f"    - Title: {title}")
             print(f"    - Code:  {code}")
 
@@ -135,11 +136,11 @@ def process_directory(directory):
             force_spotlight_index(file_path)
 
         except PermissionError:
-            print(f"[{i+1}/{len(files)}] Permission Denied: Could not access {filename}.")
+            print(f"{ERROR} [{i+1}/{len(files)}] Permission Denied: Could not access {filename}.")
         except Exception as e:
-            print(f"[{i+1}/{len(files)}] Error processing {filename}: {e}")
+            print(f"{ERROR} [{i+1}/{len(files)}] Error processing {filename}: {e}")
 
-    print(f"\nFinished tagging {len(files)} files.")
+    print(f"\n{SUCCESS} Finished tagging {len(files)} files.")
 
 def main():
     parser = argparse.ArgumentParser(description="macOS Nintendo ROM Tagger - Parses headers and injects Extended Attributes.")

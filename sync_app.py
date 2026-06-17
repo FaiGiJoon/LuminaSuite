@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+from color_constants import SUCCESS, INFO, WARNING, ERROR, HEADER, RESET
 from sync_manager import SyncManager
 import gui_theme
 
@@ -545,10 +546,12 @@ def cli_main():
 
     if args.list:
         games = manager.get_games()
-        print(f"{'Platform':<10} {'ID':<20} {'Name'}")
-        print("-" * 50)
+        # Header adjusted to align with the [*] prefix (4 chars: \033[96m\033[1m[*]\033[0m )
+        # Actually it is just 4 chars printed: [*] plus one space.
+        print(f"{HEADER}     {'Platform':<10} {'ID':<20} {'Name'}{RESET}")
+        print("-" * 55)
         for g in games:
-            print(f"{g['platform']:<10} {g['id']:<20} {g['name']}")
+            print(f"{INFO} {g['platform']:<10} {g['id']:<20} {g['name']}")
 
     elif args.push:
         games = [g for g in manager.get_games() if g['id'] == args.push]
@@ -556,10 +559,13 @@ def cli_main():
             games = [g for g in games if g['platform'].lower() == args.platform.lower()]
 
         if not games:
-            print(f"Game {args.push} not found.")
+            print(f"{ERROR} Game {args.push} not found.")
         else:
             success, msg = manager.sync_push(games[0])
-            print(msg)
+            if success:
+                print(f"{SUCCESS} {msg}")
+            else:
+                print(f"{ERROR} {msg}")
 
     elif args.pull:
         games = [g for g in manager.get_games() if g['id'] == args.pull]
@@ -567,10 +573,13 @@ def cli_main():
             games = [g for g in games if g['platform'].lower() == args.platform.lower()]
 
         if not games:
-            print(f"Game {args.pull} not found.")
+            print(f"{ERROR} Game {args.pull} not found.")
         else:
             success, msg = manager.sync_pull(games[0])
-            print(msg)
+            if success:
+                print(f"{SUCCESS} {msg}")
+            else:
+                print(f"{ERROR} {msg}")
     else:
         if GUI_AVAILABLE:
             app = PokeSyncApp(manager)

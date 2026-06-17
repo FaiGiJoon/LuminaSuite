@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+from color_constants import SUCCESS, INFO, WARNING, ERROR, HEADER, RESET
 from omni.core.engine import TranslationEngine, ManifestManager
 from omni.modules.handheld import HandheldModule
 from omni.modules.disc import DiscModule
@@ -28,35 +29,35 @@ def main():
     elif args.platform == "cartridge":
         module = CartridgeModule(args.file, args.output, args.tbl)
     else:
-        print("Unsupported platform.")
+        print(f"{ERROR} Unsupported platform.")
         sys.exit(1)
 
     manifest_path = args.manifest or f"{args.file}.manifest.json"
 
     # 2. Extract or Load Manifest
     if os.path.exists(manifest_path):
-        print(f"Loading existing manifest: {manifest_path}")
+        print(f"{INFO} Loading existing manifest: {manifest_path}")
         manifest = ManifestManager.load(manifest_path)
     else:
-        print(f"Extracting strings from {args.file}...")
+        print(f"{INFO} Extracting strings from {args.file}...")
         manifest = module.extract_strings()
         ManifestManager.save(manifest, manifest_path)
 
     # 3. Translate
     if args.translate:
         engine = TranslationEngine(model=args.model)
-        print(f"Translating strings via Ollama ({args.model})...")
+        print(f"{HEADER} Translating strings via Ollama ({args.model})...{RESET}")
         for string_id, info in manifest.items():
             if not info.get("translation"):
                 translation = engine.translate(info["original"])
                 if translation:
                     info["translation"] = translation
-                    print(f"Translated: {info['original']} -> {translation}")
+                    print(f"{SUCCESS} Translated: {info['original']} -> {translation}")
         ManifestManager.save(manifest, manifest_path)
 
     # 4. Inject
     if args.inject:
-        print(f"Injecting translations into {args.output or 'default output'}...")
+        print(f"{INFO} Injecting translations into {args.output or 'default output'}...")
         translations = {k: v["translation"] for k, v in manifest.items() if v.get("translation")}
         module.inject_strings(translations)
 

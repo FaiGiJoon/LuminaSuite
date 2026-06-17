@@ -1,6 +1,7 @@
 import json
 import requests
 import os
+from color_constants import ERROR
 
 class TranslationEngine:
     def __init__(self, ollama_url="http://localhost:11434/api/generate", model="llama3"):
@@ -32,7 +33,7 @@ class TranslationEngine:
             response.raise_for_status()
             return response.json().get("response", "").strip()
         except Exception as e:
-            print(f"Translation Error: {e}")
+            print(f"{ERROR} Translation Error: {e}")
             return None
 
 class ManifestManager:

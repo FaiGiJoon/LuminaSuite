@@ -1,5 +1,6 @@
 import os
 import re
+from color_constants import SUCCESS, INFO
 from ..core.base_module import BaseModule
 
 class CartridgeModule(BaseModule):
@@ -102,12 +103,12 @@ class CartridgeModule(BaseModule):
 
         # N64 Checksum Fix (Placeholder)
         if self.file_path.lower().endswith('.n64') or self.file_path.lower().endswith('.z64'):
-            print("N64 ROM detected. Recalculating checksum...")
+            print(f"{INFO} N64 ROM detected. Recalculating checksum...")
             self.fix_n64_checksum(data)
 
         with open(self.output_path, 'wb') as f:
             f.write(data)
-        print(f"Cartridge ROM {self.output_path} generated.")
+        print(f"{SUCCESS} Cartridge ROM {self.output_path} generated.")
 
     def fix_n64_checksum(self, data):
         """

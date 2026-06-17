@@ -9,6 +9,7 @@ import requests
 from PIL import Image
 import mss
 import pytesseract
+from color_constants import INFO, WARNING, ERROR
 
 # Default configuration
 DEFAULT_CONFIG = {
@@ -37,7 +38,7 @@ class TranslatorApp:
                 from Quartz import CGWindowListCopyWindowInfo, kCGWindowListOptionOnScreenOnly, kCGNullWindowID
                 self.Quartz = True
             except ImportError:
-                print("Quartz not found. Window tracking disabled.")
+                print(f"{WARNING} Quartz not found. Window tracking disabled.")
 
         if setup_ui:
             self.setup_ui()
@@ -110,7 +111,7 @@ class TranslatorApp:
                 sct_img = sct.grab(monitor)
                 return Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
             except Exception as e:
-                print(f"Capture error: {e}")
+                print(f"{ERROR} Capture error: {e}")
                 return None
 
     def perform_ocr(self, image):
@@ -120,7 +121,7 @@ class TranslatorApp:
             # Clean up whitespace
             return text.strip()
         except Exception as e:
-            print(f"OCR Error: {e}")
+            print(f"{ERROR} OCR Error: {e}")
             return ""
 
     def translate_text(self, text):
@@ -143,7 +144,7 @@ class TranslatorApp:
             result = response.json()
             return result.get("response", "").strip()
         except Exception as e:
-            print(f"Translation Error: {e}")
+            print(f"{ERROR} Translation Error: {e}")
             return f"[Error: {e}]"
 
     def update_loop(self):
@@ -159,7 +160,7 @@ class TranslatorApp:
                 threading.Thread(target=self.process_translation_threaded, daemon=True).start()
 
         except Exception as e:
-            print(f"Loop Error: {e}")
+            print(f"{ERROR} Loop Error: {e}")
 
         # Schedule next update
         self.root.after(self.config["update_interval_ms"], self.update_loop)
@@ -177,7 +178,7 @@ class TranslatorApp:
                         self.root.after(0, lambda: self.label.config(text=translation))
                         self.last_text = current_text
         except Exception as e:
-            print(f"Threaded processing error: {e}")
+            print(f"{ERROR} Threaded processing error: {e}")
         finally:
             self.translation_in_progress = False
 

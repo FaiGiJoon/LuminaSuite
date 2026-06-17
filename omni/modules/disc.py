@@ -1,6 +1,6 @@
 import os
 import re
-import subprocess
+from color_constants import SUCCESS, WARNING
 from ..core.base_module import BaseModule
 
 class DiscModule(BaseModule):
@@ -73,8 +73,8 @@ class DiscModule(BaseModule):
                 new_data = new_data.ljust(max_len, b'\x00')
                 data[offset:offset+max_len] = new_data
             else:
-                print(f"Warning: Translation for {string_id} too long, skipping.")
+                print(f"{WARNING} Translation for {string_id} too long, skipping.")
 
         with open(self.output_path, 'wb') as f:
             f.write(data)
-        print(f"Disc-based file {self.output_path} updated.")
+        print(f"{SUCCESS} Disc-based file {self.output_path} updated.")
